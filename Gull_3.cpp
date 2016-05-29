@@ -41,6 +41,7 @@ Modifications and code written by José M. Velasco declared how PUBLIC DOMAIN.
 #include <iostream>
 #include "setjmp.h"
 #include "windows.h"
+#include "math.h"
 
 #define EXPLAIN_EVAL
 #undef EXPLAIN_EVAL
@@ -96,7 +97,7 @@ typedef long long sint64;
 #define SDiag(x) (File(x) + Rank(x))
 #define Dist(x,y) Max(Abs(Rank(x)-Rank(y)),Abs(File(x)-File(y)))
 #define VarC(var,me) ((me) ? (var##_b) : (var##_w))
-#define PVarC(prefix,var,me) ((me) ? (prefix##.##var##_b) : (prefix##.##var##_w))
+#define PVarC(prefix,var,me) ((me) ? (prefix.var##_b) : (prefix.var##_w))
 
 #define Bit(x) (Convert(1,uint64) << (x))
 #ifndef HNI
@@ -1054,6 +1055,7 @@ sint64 get_time();
 int time_to_stop(GSearchInfo * SI, int time, int searching);
 void check_time(int searching);
 void check_time(int time, int searching);
+void check_state();
 int input();
 void uci();
 
@@ -1068,7 +1070,7 @@ void uci();
 #define DECOMP64
 #endif
 
-#include <xstring>
+// #include <xstring>
 
 extern int TBLargest;
 void init(const std::string& path);
@@ -1551,6 +1553,7 @@ void init(const std::string& path)
 
 	const char *p = path.c_str();
 	if (strlen(p) == 0) return;
+
 	path_string = (char *)malloc(strlen(p) + 1);
 	strcpy(path_string, p);
 	num_paths = 0;
@@ -4203,11 +4206,13 @@ void init_hash() {
 #endif
 		typedef int(*GETLARGEPAGEMINIMUM)(void);
 		GETLARGEPAGEMINIMUM pGetLargePageMinimum;
-		HINSTANCE hDll = LoadLibrary(TEXT("kernel32.dll"));
+		HINSTANCE hDll;
+		hDll = LoadLibrary(TEXT("kernel32.dll"));
 		if (hDll == NULL) goto no_lp;
 		pGetLargePageMinimum = (GETLARGEPAGEMINIMUM)GetProcAddress(hDll, "GetLargePageMinimum");
 		if (pGetLargePageMinimum == NULL) goto no_lp;
-		int min_page_size = (*pGetLargePageMinimum)();
+		int min_page_size;
+		min_page_size = (*pGetLargePageMinimum)();
 		if (size < min_page_size) size = min_page_size;
 		if (!initialized) {
 			TOKEN_PRIVILEGES tp;
@@ -8113,10 +8118,10 @@ void check_time(int searching) {
 #endif
 
 	while (!Stop && input()) uci();
-
+    int Time = 0;
 	if (Stop) goto jump;
 	CurrTime = get_time();
-	int Time = Convert(CurrTime - StartTime,int);
+	Time = Convert(CurrTime - StartTime,int);
 	if (T(Print) && Time > InfoLag && CurrTime - InfoTime > InfoDelay) {
 		InfoTime = CurrTime;
 		if (info_string[0]) {
@@ -8135,10 +8140,10 @@ jump:
 void check_time(int time, int searching) {
 
 	while (!Stop && input()) uci();
-
+    int Time = 0;
 	if (Stop) goto jump;
 	CurrTime = get_time();
-	int Time = Convert(CurrTime - StartTime,int);
+	Time = Convert(CurrTime - StartTime,int);
 	if (T(Print) && Time > InfoLag && CurrTime - InfoTime > InfoDelay) {
 		InfoTime = CurrTime;
 		if (info_string[0]) {
@@ -8589,8 +8594,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	int CPUInfo[4] = { -1 };
-	__cpuid(CPUInfo, 1);
-	HardwarePopCnt = (CPUInfo[2] >> 23) & 1;
+	//__cpuid(CPUInfo, 1);
+	HardwarePopCnt = /*(CPUInfo[2] >> 23) &*/ 1;
 
 	if (parent) {
 		if (((CPUInfo[3] >> 28) & 1) && GetProcAddress(GetModuleHandle(TEXT("kernel32")), "GetLogicalProcessorInformation") != NULL) {
